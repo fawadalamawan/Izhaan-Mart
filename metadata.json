@@ -1,0 +1,6 @@
+{
+  "name": "HyperLocal Mart - Neighborhood Delivery",
+  "description": "Mobile-first hyperlocal e-commerce web app for single store owners delivering daily household goods within a 100 sq km zone with zone-validation, live delivery tracking, inventory management, and multi-role portals.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
