@@ -135,7 +135,7 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
 
   const handleShareWhatsApp = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
-    const text = encodeURIComponent(`Hey! Look at this product on DailyNest Mart: ${product.name} (${product.unit}) for only $${product.salePrice}! Delivered in 30 mins to our neighborhood.`);
+    const text = encodeURIComponent(`Hey! Look at this product on Izhaan Mart: ${product.name} (${product.unit}) for only $${product.salePrice}! Delivered in 30 mins to our neighborhood.`);
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
