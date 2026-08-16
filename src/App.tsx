@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Header } from './components/common/Header';
 import { BottomNav } from './components/common/BottomNav';
 import { ZonePickerModal } from './components/common/ZonePickerModal';
@@ -32,11 +32,11 @@ import {
   User,
   Coupon,
   NotificationLog,
-  DeliveryPerson
+  DeliveryPerson,
+  UserRole
 } from './types';
 
 export default function App() {
-  // Global domain state initialized from StorageService
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -47,14 +47,13 @@ export default function App() {
   const [selectedZone, setSelectedZone] = useState<DeliveryZone | null>(null);
   const [notifications, setNotifications] = useState<NotificationLog[]>([]);
   const [drivers, setDrivers] = useState<DeliveryPerson[]>([]);
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
 
-  // Navigation & Role states
-  const [currentRole, setCurrentRole] = useState<'CUSTOMER' | 'ADMIN' | 'DELIVERY_PERSON'>('CUSTOMER');
-  const [currentTab, setCurrentTab] = useState<'SHOP' | 'ORDERS' | 'PROFILE' | 'ADMIN' | 'DRIVER'>('SHOP');
+  const [currentRole, setCurrentRole] = useState<UserRole>('CUSTOMER');
+  const [currentTab, setCurrentTab] = useState<'home' | 'orders' | 'categories' | 'wishlist'>('home');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // Modals & Drawers state
   const [isZonePickerOpen, setIsZonePickerOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -64,11 +63,9 @@ export default function App() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [trackingOrder, setTrackingOrder] = useState<Order | null>(null);
 
-  // Coupons & Pricing
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
-  const [couponDiscount, setCouponDiscount] = useState<number>(0);
+  const [couponDiscount, setCouponDiscount] = useState(0);
 
-  // Load all initial state & subscribe to changes
   const reloadData = () => {
     setProducts(StorageService.getProducts());
     setCategories(StorageService.getCategories());
@@ -84,15 +81,21 @@ export default function App() {
 
   useEffect(() => {
     reloadData();
-    const unsubscribe = StorageService.subscribe(() => {
-      reloadData();
-    });
+    const unsubscribe = StorageService.subscribe(() => reloadData());
     return () => unsubscribe();
   }, []);
 
-  // Cart operations
-  const handleAddToCart = (product: Product, quantity = 1) => {
-    StorageService.addToCart(product, quantity);
+  const cartItemsMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    cartItems.forEach((i) => { map[i.productId] = i.quantity; });
+    return map;
+  }, [cartItems]);
+
+  const cartCount = cartItems.reduce((sum, i) => sum + i.quantity, 0);
+  const cartTotal = cartItems.reduce((sum, i) => sum + i.product.salePrice * i.quantity, 0);
+
+  const handleAddToCart = (product: Product) => {
+    StorageService.addToCart(product, 1);
     reloadData();
   };
 
@@ -108,7 +111,15 @@ export default function App() {
     reloadData();
   };
 
-  // Coupon Engine
+  const handleToggleWishlist = (productId: string) => {
+    setWishlistIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  };
+
   const handleApplyCoupon = (code: string): { success: boolean; message: string } => {
     const subtotal = cartItems.reduce((sum, item) => sum + item.product.salePrice * item.quantity, 0);
     const result = StorageService.validateCoupon(code, subtotal);
@@ -125,66 +136,49 @@ export default function App() {
     setCouponDiscount(0);
   };
 
-  // Reorder flow
   const handleReorder = (pastOrder: Order) => {
-    pastOrder.items.forEach(item => {
-      const prod = products.find(p => p.id === item.productId);
-      if (prod && prod.stock > 0) {
-        StorageService.addToCart(prod, item.quantity);
-      }
+    pastOrder.items.forEach((item) => {
+      const prod = products.find((p) => p.id === item.productId);
+      if (prod && prod.stock > 0) StorageService.addToCart(prod, item.quantity);
     });
     reloadData();
     setIsCartOpen(true);
   };
 
-  // Checkout complete
   const handleOrderPlaced = (newOrder: Order) => {
     handleClearCart();
     setTrackingOrder(newOrder);
-    setCurrentTab('ORDERS');
+    setCurrentTab('orders');
   };
 
-  // Role switch handler
-  const handleRoleChange = (role: 'CUSTOMER' | 'ADMIN' | 'DELIVERY_PERSON') => {
+  const handleRoleChange = (role: UserRole) => {
     setCurrentRole(role);
-    if (role === 'ADMIN') {
-      setCurrentTab('ADMIN');
-    } else if (role === 'DELIVERY_PERSON') {
-      setCurrentTab('DRIVER');
-    } else {
-      setCurrentTab('SHOP');
-    }
+    if (role === 'CUSTOMER') setCurrentTab('home');
   };
-
-  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-emerald-100 selection:text-emerald-900">
-      
-      {/* Top Header */}
       <Header
-        storeName={settings.storeName}
-        tagline={settings.tagline}
+        activeRole={currentRole}
+        onRoleChange={handleRoleChange}
         selectedZone={selectedZone}
         onOpenZonePicker={() => setIsZonePickerOpen(true)}
-        cartItemCount={cartCount}
+        cartCount={cartCount}
+        cartTotal={cartTotal}
+        wishlistCount={wishlistIds.size}
         onOpenCart={() => setIsCartOpen(true)}
-        unreadNotificationCount={notifications.filter(n => !n.read).length}
-        onOpenNotifications={() => setIsNotificationsOpen(true)}
-        currentUser={currentUser}
+        onOpenWishlist={() => setCurrentTab('wishlist')}
+        onOpenOrders={() => setCurrentTab('orders')}
         onOpenAuth={() => setIsAuthOpen(true)}
-        currentRole={currentRole}
-        onRoleChange={handleRoleChange}
+        onOpenDocs={() => setIsDocsOpen(true)}
+        onOpenNotifications={() => setIsNotificationsOpen(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        broadcastBanner={settings.broadcastBanner}
-        onOpenDocs={() => setIsDocsOpen(true)}
+        settings={settings}
+        unreadNotifsCount={notifications.filter((n) => !n.read).length}
       />
 
-      {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-4 lg:px-6 py-4">
-        
-        {/* CUSTOMER VIEWS */}
         {currentRole === 'CUSTOMER' && (
           <>
             {isCheckoutActive ? (
@@ -203,43 +197,59 @@ export default function App() {
               />
             ) : (
               <>
-                {currentTab === 'SHOP' && (
+                {(currentTab === 'home' || currentTab === 'categories') && (
                   <StorefrontView
                     products={products}
                     categories={categories}
-                    searchQuery={searchQuery}
-                    selectedCategoryId={selectedCategoryId}
-                    onSelectCategory={setSelectedCategoryId}
-                    cartItems={cartItems}
-                    onAddToCart={handleAddToCart}
-                    onUpdateQuantity={handleUpdateCartQuantity}
-                    onProductClick={(prod) => setSelectedProduct(prod)}
-                    onOpenCart={() => setIsCartOpen(true)}
+                    selectedCategory={selectedCategory}
+                    onSelectCategory={setSelectedCategory}
                     selectedZone={selectedZone}
                     onOpenZonePicker={() => setIsZonePickerOpen(true)}
+                    cartItemsMap={cartItemsMap}
+                    onAddToCart={handleAddToCart}
+                    onUpdateCartQuantity={handleUpdateCartQuantity}
+                    wishlistIds={wishlistIds}
+                    onToggleWishlist={handleToggleWishlist}
+                    onOpenProductDetail={(prod) => setSelectedProduct(prod)}
+                    onOpenCheckout={() => {
+                      setIsCartOpen(false);
+                      setIsCheckoutActive(true);
+                    }}
+                    searchQuery={searchQuery}
                   />
                 )}
 
-                {currentTab === 'ORDERS' && (
+                {currentTab === 'orders' && (
                   <OrderHistoryView
                     orders={orders}
                     onOpenOrderTracking={(ord) => setTrackingOrder(ord)}
                     onReorder={handleReorder}
-                    onBackToShopping={() => setCurrentTab('SHOP')}
+                    onBackToShopping={() => setCurrentTab('home')}
                   />
                 )}
 
-                {currentTab === 'PROFILE' && (
-                  <div className="py-4">
-                    <AuthModal
-                      isOpen={true}
-                      onClose={() => setCurrentTab('SHOP')}
-                      currentUser={currentUser}
-                      onUpdateUser={(updated) => {
-                        setCurrentUser(updated);
-                        reloadData();
-                      }}
-                    />
+                {currentTab === 'wishlist' && (
+                  <div className="py-8 text-center text-slate-500 text-sm">
+                    {wishlistIds.size === 0 ? (
+                      <p>No saved items yet. Tap the heart on products to save them.</p>
+                    ) : (
+                      <StorefrontView
+                        products={products.filter((p) => wishlistIds.has(p.id))}
+                        categories={categories}
+                        selectedCategory={null}
+                        onSelectCategory={() => {}}
+                        selectedZone={selectedZone}
+                        onOpenZonePicker={() => setIsZonePickerOpen(true)}
+                        cartItemsMap={cartItemsMap}
+                        onAddToCart={handleAddToCart}
+                        onUpdateCartQuantity={handleUpdateCartQuantity}
+                        wishlistIds={wishlistIds}
+                        onToggleWishlist={handleToggleWishlist}
+                        onOpenProductDetail={(prod) => setSelectedProduct(prod)}
+                        onOpenCheckout={() => setIsCheckoutActive(true)}
+                        searchQuery=""
+                      />
+                    )}
                   </div>
                 )}
               </>
@@ -247,7 +257,6 @@ export default function App() {
           </>
         )}
 
-        {/* STORE OWNER ADMIN DASHBOARD */}
         {currentRole === 'ADMIN' && (
           <AdminDashboard
             products={products}
@@ -261,32 +270,24 @@ export default function App() {
           />
         )}
 
-        {/* DELIVERY RIDER VIEW */}
-        {currentRole === 'DELIVERY_PERSON' && (
-          <DeliveryRiderView
-            orders={orders}
-            onRefreshData={reloadData}
-          />
+        {currentRole === 'DELIVERY' && (
+          <DeliveryRiderView orders={orders} onRefreshData={reloadData} />
         )}
-
       </main>
 
-      {/* Mobile Bottom Navigation */}
       <BottomNav
-        currentTab={currentTab}
+        activeTab={currentTab}
         onTabChange={(tab) => {
-          if (tab === 'PROFILE') {
-            setIsAuthOpen(true);
-          } else {
-            setCurrentTab(tab);
-          }
+          if (tab === 'orders') setCurrentTab('orders');
+          else if (tab === 'wishlist') setCurrentTab('wishlist');
+          else setCurrentTab('home');
         }}
-        cartItemCount={cartCount}
-        onOpenCart={() => setIsCartOpen(true)}
-        currentRole={currentRole}
+        cartCount={cartCount}
+        wishlistCount={wishlistIds.size}
+        activeRole={currentRole}
+        onOpenAuth={() => setIsAuthOpen(true)}
       />
 
-      {/* Cart Drawer */}
       <CartDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
@@ -298,7 +299,7 @@ export default function App() {
         onProceedToCheckout={() => {
           setIsCartOpen(false);
           setCurrentRole('CUSTOMER');
-          setCurrentTab('SHOP');
+          setCurrentTab('home');
           setIsCheckoutActive(true);
         }}
         appliedCoupon={appliedCoupon}
@@ -307,29 +308,23 @@ export default function App() {
         onRemoveCoupon={handleRemoveCoupon}
       />
 
-      {/* Product Detail Modal */}
       <ProductDetailModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
-        cartQuantity={
-          selectedProduct
-            ? cartItems.find(i => i.productId === selectedProduct.id)?.quantity || 0
-            : 0
-        }
-        onAddToCart={(prod, qty) => handleAddToCart(prod, qty)}
-        onUpdateQuantity={handleUpdateCartQuantity}
-        onOpenCart={() => setIsCartOpen(true)}
-        selectedZone={selectedZone}
+        cartQty={selectedProduct ? cartItemsMap[selectedProduct.id] || 0 : 0}
+        onAddToCart={handleAddToCart}
+        onUpdateCartQuantity={handleUpdateCartQuantity}
+        isWishlisted={selectedProduct ? wishlistIds.has(selectedProduct.id) : false}
+        onToggleWishlist={handleToggleWishlist}
+        onSelectRelatedProduct={(p) => setSelectedProduct(p)}
       />
 
-      {/* Live Order Tracking Modal */}
       <OrderTrackingModal
         order={trackingOrder}
         onClose={() => setTrackingOrder(null)}
         onReorder={handleReorder}
       />
 
-      {/* Neighborhood Zone Picker Modal */}
       <ZonePickerModal
         isOpen={isZonePickerOpen}
         onClose={() => setIsZonePickerOpen(false)}
@@ -342,18 +337,12 @@ export default function App() {
         }}
       />
 
-      {/* Notification Drawer */}
       <NotificationDrawer
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
         notifications={notifications}
-        onMarkAllRead={() => {
-          StorageService.markAllNotificationsRead();
-          reloadData();
-        }}
       />
 
-      {/* Customer Auth & Profile Modal */}
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
@@ -364,12 +353,7 @@ export default function App() {
         }}
       />
 
-      {/* System Architecture, PostgreSQL DDL & Docker Docs */}
-      <ArchitectureDocsModal
-        isOpen={isDocsOpen}
-        onClose={() => setIsDocsOpen(false)}
-      />
-
+      <ArchitectureDocsModal isOpen={isDocsOpen} onClose={() => setIsDocsOpen(false)} />
     </div>
   );
 }
