@@ -27,20 +27,20 @@ import {
 } from '../data/initialData';
 
 const STORAGE_KEYS = {
-  PRODUCTS: 'dailynest_products_v1',
-  CATEGORIES: 'dailynest_categories_v1',
-  ZONES: 'dailynest_zones_v1',
-  COUPONS: 'dailynest_coupons_v1',
-  SLOTS: 'dailynest_slots_v1',
-  SETTINGS: 'dailynest_settings_v1',
-  DRIVERS: 'dailynest_drivers_v1',
-  USER: 'dailynest_current_user_v1',
-  ORDERS: 'dailynest_orders_v1',
-  REVIEWS: 'dailynest_reviews_v1',
-  NOTIFICATIONS: 'dailynest_notifications_v1',
-  ROLE: 'dailynest_active_role_v1',
-  CART: 'dailynest_cart_items_v1',
-  WISHLIST: 'dailynest_wishlist_ids_v1'
+  PRODUCTS: 'Izhaan_products_v1',
+  CATEGORIES: 'Izhaan_categories_v1',
+  ZONES: 'Izhaan_zones_v1',
+  COUPONS: 'Izhaan_coupons_v1',
+  SLOTS: 'Izhaan_slots_v1',
+  SETTINGS: 'Izhaan_settings_v1',
+  DRIVERS: 'Izhaan_drivers_v1',
+  USER: 'Izhaan_current_user_v1',
+  ORDERS: 'Izhaan_orders_v1',
+  REVIEWS: 'Izhaan_reviews_v1',
+  NOTIFICATIONS: 'Izhaan_notifications_v1',
+  ROLE: 'Izhaan_active_role_v1',
+  CART: 'Izhaan_cart_items_v1',
+  WISHLIST: 'Izhaan_wishlist_ids_v1'
 };
 
 function safeGet<T>(key: string, defaultValue: T): T {
@@ -56,7 +56,7 @@ function safeGet<T>(key: string, defaultValue: T): T {
 function safeSet<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
-    window.dispatchEvent(new CustomEvent('dailynest_storage_update', { detail: { key } }));
+    window.dispatchEvent(new CustomEvent('Izhaan_storage_update', { detail: { key } }));
   } catch (err) {
     console.error('Storage write error', err);
   }
@@ -278,22 +278,22 @@ export class StorageService {
   // SELECTED ZONE
   static getSelectedZone(): DeliveryZone | null {
     const zones = this.getZones();
-    const saved = safeGet<DeliveryZone | null>('dailynest_selected_zone_v1', null);
+    const saved = safeGet<DeliveryZone | null>('Izhaan_selected_zone_v1', null);
     if (saved) return saved;
     return zones[0] || null;
   }
 
   static saveSelectedZone(zone: DeliveryZone | null): void {
-    safeSet('dailynest_selected_zone_v1', zone);
+    safeSet('Izhaan_selected_zone_v1', zone);
   }
 
   // REACTIVE LISTENER
   static subscribe(callback: () => void): () => void {
     const handler = () => callback();
-    window.addEventListener('dailynest_storage_update', handler);
+    window.addEventListener('Izhaan_storage_update', handler);
     window.addEventListener('storage', handler);
     return () => {
-      window.removeEventListener('dailynest_storage_update', handler);
+      window.removeEventListener('Izhaan_storage_update', handler);
       window.removeEventListener('storage', handler);
     };
   }
@@ -477,7 +477,7 @@ export class StorageService {
         recipientPhone: '+1 (555) 678-9900',
         channel: 'WHATSAPP',
         title: 'Order Confirmed',
-        body: 'Your order DN-8924 for $452 has been confirmed by DailyNest Mart!',
+        body: 'Your order DN-8924 for $452 has been confirmed by Izhaan Mart!',
         timestamp: '2026-08-16T05:22:00.000Z',
         orderId: 'ord-10024'
       }
