@@ -63,7 +63,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `Order "${product.name}" (${product.unit}) for $${product.salePrice} from DailyNest Mart. 30-min neighborhood delivery: ${window.location.origin}`
+      `Order "${product.name}" (${product.unit}) for $${product.salePrice} from Izhaan Mart. 30-min neighborhood delivery: ${window.location.origin}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
