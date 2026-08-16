@@ -501,7 +501,7 @@ export const INITIAL_STORE_SETTINGS: StoreSettings = {
   tagline: 'Fresh Groceries & Household Essentials within 100 sq km',
   phone: '+1 (555) 324-5968',
   whatsappNumber: '+15553245968',
-  email: 'support@dailynestmart.local',
+  email: 'support@Izhaanmart.local',
   address: 'Shop #4-B, Central Market Complex, Downtown Avenue',
   serviceRadiusKm: 12,
   storeOpen: true,
