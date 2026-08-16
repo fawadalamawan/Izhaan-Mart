@@ -497,7 +497,7 @@ export const INITIAL_SLOTS: DeliverySlot[] = [
 ];
 
 export const INITIAL_STORE_SETTINGS: StoreSettings = {
-  storeName: 'DailyNest Neighborhood Mart',
+  storeName: 'Izhaan Mart',
   tagline: 'Fresh Groceries & Household Essentials within 100 sq km',
   phone: '+1 (555) 324-5968',
   whatsappNumber: '+15553245968',
