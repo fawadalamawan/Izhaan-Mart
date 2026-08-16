@@ -215,6 +215,7 @@ export interface NotificationLog {
   body: string;
   timestamp: string;
   orderId?: string;
+  read?: boolean;  // ← ADD THIS
 }
 
 export interface AdminAnalyticsKPIs {
