@@ -34,7 +34,7 @@ export const ArchitectureDocsModal: React.FC<ArchitectureDocsModalProps> = ({
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const postgresDDL = `-- DailyNest Mart: Production Hyperlocal PostgreSQL Schema
+  const postgresDDL = `-- Izhaan Mart: Production Hyperlocal PostgreSQL Schema
 -- Optimized for ~100 sq km zone delivery, inventory locks & fast catalog lookups
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -163,19 +163,19 @@ CREATE INDEX idx_orders_created_at ON orders(created_at DESC);`;
   const dockerComposeYaml = `version: '3.8'
 
 services:
-  # DailyNest Web PWA & Express API Backend
+  # Izhaan Web PWA & Express API Backend
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: dailynest-app
+    container_name: Izhaan-app
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - DATABASE_URL=postgres://dailynest_user:securepass123@postgres:5432/dailynest_db
+      - DATABASE_URL=postgres://Izhaan_user:securepass123@postgres:5432/Izhaan_db
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=production_secret_key_89234872938472938472
       - RAZORPAY_KEY_ID=\${RAZORPAY_KEY_ID}
@@ -192,19 +192,19 @@ services:
   # PostgreSQL Database for ACID Transactions & Inventory
   postgres:
     image: postgres:15-alpine
-    container_name: dailynest-db
+    container_name: Izhaan-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: dailynest_user
+      POSTGRES_USER: Izhaan_user
       POSTGRES_PASSWORD: securepass123
-      POSTGRES_DB: dailynest_db
+      POSTGRES_DB: Izhaan_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dailynest_user -d dailynest_db"]
+      test: ["CMD-SHELL", "pg_isready -U dailynest_user -d Izhaan_db"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -212,7 +212,7 @@ services:
   # Redis for Session Cache & Rate Limiting
   redis:
     image: redis:7-alpine
-    container_name: dailynest-redis
+    container_name: Izhaan-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -223,7 +223,7 @@ volumes:
   postgres_data:
   redis_data:`;
 
-  const githubActionsYaml = `name: DailyNest CI/CD Pipeline
+  const githubActionsYaml = `name: Izhaan CI/CD Pipeline
 
 on:
   push:
