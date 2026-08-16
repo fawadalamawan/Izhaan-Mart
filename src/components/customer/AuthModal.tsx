@@ -44,8 +44,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     StorageService.logNotification({
       recipientPhone: phoneInput,
       channel: 'SMS',
-      title: 'DailyNest Login OTP',
-      body: 'Your DailyNest Mart verification code is 123456. Valid for 5 minutes. Do not share.'
+      title: 'Izhaan Login OTP',
+      body: 'Your Izhaan Mart verification code is 123456. Valid for 5 minutes. Do not share.'
     });
   };
 
@@ -88,7 +88,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-base font-display">Resident Account</h3>
-              <p className="text-[11px] text-emerald-100">DailyNest Hyperlocal Customer Portal</p>
+              <p className="text-[11px] text-emerald-100">Izhaan Hyperlocal Customer Portal</p>
             </div>
           </div>
           <button
